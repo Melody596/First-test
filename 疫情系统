@@ -1,0 +1,271 @@
+package 表格;
+
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Scanner;
+
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.*;
+import jxl.write.*;
+
+import javafx.scene.control.Cell;
+
+
+public class 疫情系统 {
+	public static void main(String[] args) throws Exception {
+		System.out.println("*********疫情信息管理系统功能表*********");
+		System.out.println("请选择操作：");
+		System.out.println("1:添加病患信息");
+		System.out.println("2:按病患编号查询");
+		System.out.println("3 list:按某种数据查询");
+		System.out.println("3 all:列出所有防疫信息");
+		System.out.println("exit:退出系统");
+		while (true) {
+			Scanner s = new Scanner(System.in);
+			String key = null;
+			String key2 = null;
+			key = s.next();
+			if ("1".equalsIgnoreCase(key)) {
+				insert.main();
+			} else if ("2".equalsIgnoreCase(key)) {
+				search.main();
+			}else if ("3".equalsIgnoreCase(key)) {
+				key2 = s.next();
+				if ("list".equalsIgnoreCase(key2)) {
+					list.listByCourse();
+				} else if ("all".equalsIgnoreCase(key2)) {
+					list.listByID();
+				} else {
+					System.out.println("不存在" + key2 + "状况");
+				}
+			} else if ("exit".equalsIgnoreCase(key)) {
+				System.out.println("感谢使用本系统,再见!");
+				break;
+			} else {
+				System.out.println("本系统不支持 " + key + " 这种操作");
+			}
+		}
+	}
+}
+
+class insert {
+	static String name = null;
+	static String ID = null;
+	static String situation1 = null;
+	static String situation2 = null;
+	static String situation3 = null;
+	static String situation4 = null;
+	static int rsRows;
+	static int rsCols;
+
+	static boolean main() {
+		Scanner s = new Scanner(System.in);
+
+		System.out.println("请输入要添加的病患ID、姓名:");
+		ID = s.next();
+		name = s.next();
+		System.out
+				.println("请输入该病患有无发热、是否为在武汉、是否与病患有密切接触、登记日期（如' 否 /n 否 /n 否 /n 2020-03-11 /n'）:");
+		situation1 = s.next();
+		situation2 = s.next();
+		situation3 = s.next();
+		situation4 = s.next();
+		try {
+			InputStream is = new FileInputStream("C://Users//Administrator//Desktop//疫情数据.xls");
+			Workbook rwb = Workbook.getWorkbook(is);
+			Sheet rs = rwb.getSheet(0);
+			rsRows = rs.getRows();
+			rsCols = rs.getColumns();
+			String[][] readfile = new String[rsCols][rsRows];
+			for (int j = 0; j < rsRows; j++)
+				for (int i = 0; i < rsCols; i++) {
+					jxl.Cell cell = rs.getCell(i, j);// （列，行）
+					String str = ((jxl.Cell) cell).getContents();
+					readfile[i][j] = str;
+				}
+			OutputStream os = new FileOutputStream("C://Users//Administrator//Desktop//疫情数据.xls");
+			WritableWorkbook wwb = Workbook.createWorkbook(os);
+			// 创建Excel工作表
+			WritableSheet sheet = wwb.createSheet("testsheet", 0);
+			// 原表格中数据重新写入
+			for (int j = 0; j < rsRows; j++)
+				for (int i = 0; i < rsCols; i++) {
+					sheet.addCell(new Label(i, j, readfile[i][j]));
+				}
+
+			for (int j = 0; j < rsRows; j++)
+				if (ID.equals(readfile[1][j])) {
+					System.out.println(ID + "已存在,请问要覆盖信息吗？（Y/N）");
+					String answer = s.next();
+					if (answer.equalsIgnoreCase("N")) {
+						System.out.println("插入操作已取消，请重新输入操作符：");
+						// 写入Excel工作表
+						wwb.write();
+						// 关闭Excel工作薄对象
+						wwb.close();
+						return false;
+					}
+					if (answer.equalsIgnoreCase("Y"))
+						rsRows = j;
+				}
+			// 添加insert内容
+			sheet.addCell(new Label(0, rsRows, name));
+			sheet.addCell(new Label(1, rsRows, ID));
+			sheet.addCell(new Label(2, rsRows, situation1));
+			sheet.addCell(new Label(3, rsRows, situation2));
+			sheet.addCell(new Label(4, rsRows, situation3));
+			sheet.addCell(new Label(5, rsRows, situation4));
+			// 写入Excel工作表
+			wwb.write();
+			// 关闭Excel工作薄对象
+			wwb.close();
+			// 写入.txt文件备份
+			PrintWriter pw = new PrintWriter(new FileWriter(
+					"C://Users//Administrator//Desktop//疫情数据备份.txt"));
+			for (int j = 0; j < rsRows; j++) {
+				for (int i = 0; i < rsCols; i++)
+					pw.print(readfile[i][j] + "  ");
+				pw.println();
+			}
+			pw.print(name + "  ");
+			pw.print(ID + "  ");
+			pw.print("是否发热" + "  ");
+			pw.print("是否在武汉" + "  ");
+			pw.print("是否与病患有密切接触" + "  ");
+			pw.print("登记" + "  ");
+			pw.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("======完成======");
+		return true;
+	}
+}
+
+class search {
+	static String name = null;
+	//static String situation4 = null;
+	static String key = null;
+	//static String key1 = null;
+	static int rsRows;
+	static int rsCols;
+
+	static void main() {
+		Scanner s = new Scanner(System.in);
+
+		System.out.println("请输入要查找的病患姓名、登记日期:");
+		key = s.next();
+		//key1 = s.next();
+		try {
+			InputStream is = new FileInputStream("C://Users//Administrator//Desktop//疫情数据.xls");
+			Workbook rwb = Workbook.getWorkbook(is);
+			Sheet rs = rwb.getSheet(0);
+			rsRows = rs.getRows();
+			rsCols = rs.getColumns();
+			String[][] readfile = new String[rsCols][rsRows];
+			for (int j = 0; j < rsRows; j++) {
+				for (int i = 0; i < rsCols; i++) {
+					jxl.Cell cell = rs.getCell(i, j);// （列，行）
+					String str = cell.getContents();
+					readfile[i][j] = str;
+					 //System.out.print(readfile[i][j] + "\n ");
+				}
+				 //System.out.println();
+			}
+			for (int j = 0; j < rsRows; j++)
+				if (readfile[0][j].equalsIgnoreCase(key))
+					//for (int i = 0; i < rsCols; i++)
+						//if (readfile[i][0].equalsIgnoreCase(key1))
+							for (int k = 0; k < rsCols; k++) {
+						System.out.print(readfile[k][0] + "\t");
+						System.out.print(readfile[k][j] + "\n");
+					}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+class list {
+
+	static void listByCourse() throws Exception {
+
+		Scanner s = new Scanner(System.in);
+		System.out.println("******请输入要查询的症状******");
+		System.out.println("*****1：发热病患    *****");
+		System.out.println("*****2：在武汉病患    *****");
+		System.out.println("*****3：与病患有密切接触者    *****");
+		System.out.println("*****4：发热时间    *****");
+		String list = s.next();
+		int col = 0;
+		switch (list) {
+		case "1":
+			col = 2;
+			break;
+		case "2":
+			col = 3;
+			break;
+		case "3":
+			col = 4;
+			break;
+		case "4":
+			col = 5;
+			break;
+		default:
+			System.out.print("输入错误！");
+		}
+		System.out.println("===显示病患中该症状的的信息===");
+		sortBy(col);
+		System.out.println("===显示 "
+				+ "完毕===");
+	}
+
+	static void listByID() {
+		System.out.println("===显示全部病患信息===");
+		sortBy(1);
+		System.out.println("===显示完毕===");
+	}
+
+	static void sortBy(int a) {
+		try {
+			InputStream is = new FileInputStream("C://Users//Administrator//Desktop//疫情数据.xls");
+			Workbook rwb = Workbook.getWorkbook(is);
+			Sheet rs = rwb.getSheet(0);
+			int rsRows = rs.getRows();
+			int rsCols = rs.getColumns();
+			String[][] readfile = new String[rsCols][rsRows];
+			for (int j = 0; j < rsRows; j++)
+				for (int i = 0; i < rsCols; i++) {
+					readfile[i][j] = rs.getCell(i, j).getContents();
+				}
+			for (int i = 1; i < rsRows; i++)
+				for (int k = i; k < rsRows; k++) {
+					int largeIndex = i;
+					if (readfile[a][i].compareTo(readfile[a][k]) < 0)
+						largeIndex = k;
+					String[] temp = new String[rsCols];
+					for (int c = 0; c < rsCols; c++) {
+						temp[c] = readfile[c][i];
+						readfile[c][i] = readfile[c][largeIndex];
+						readfile[c][largeIndex] = temp[c];
+					}
+				}
+			for (int j = 0; j < rsRows; j++) {
+				for (int i = 0; i < rsCols; i++)
+					System.out.print(readfile[i][j] + "  ");
+				System.out.println();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}
