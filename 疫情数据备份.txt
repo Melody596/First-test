@@ -1,0 +1,4 @@
+name  ID  situation1  situation2  situation3  situation4  
+小马  20001234  否  否  否  2020-03-11  
+张三  20001122  否  否  fou  2020-03-08  
+2  2  是否发热  是否在武汉  是否与病患有密切接触  登记日期  
